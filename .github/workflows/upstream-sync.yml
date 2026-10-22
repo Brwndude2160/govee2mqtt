@@ -1,0 +1,44 @@
+name: Upstream sync
+
+# Weekly: if wez/govee2mqtt main has commits that aren't in our
+# `maintained` branch, open (or leave open) a PR proposing them.
+# The PR's head is wez:main directly, so nothing is pushed to this repo.
+
+on:
+  schedule:
+    - cron: "17 9 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: maintained
+          fetch-depth: 0
+      - name: Check for new upstream commits
+        id: check
+        run: |
+          git fetch https://github.com/wez/govee2mqtt.git main
+          count=$(git rev-list --count HEAD..FETCH_HEAD)
+          echo "new upstream commits: $count"
+          echo "count=$count" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short FETCH_HEAD)" >> "$GITHUB_OUTPUT"
+      - name: Open PR
+        if: ${{ steps.check.outputs.count != '0' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          existing=$(gh pr list -R "$GITHUB_REPOSITORY" --base maintained --head main --state open --json number,headRepositoryOwner --jq '[.[] | select(.headRepositoryOwner.login == "wez")] | length')
+          if [ "$existing" != "0" ]; then
+            echo "An upstream sync PR is already open; it tracks wez:main automatically."
+            exit 0
+          fi
+          gh pr create -R "$GITHUB_REPOSITORY" --base maintained --head wez:main \
+            --title "Upstream sync: wez/govee2mqtt main @ ${{ steps.check.outputs.sha }}" \
+            --body "wez/govee2mqtt main has ${{ steps.check.outputs.count }} commit(s) not in \`maintained\`. Review, resolve any conflicts, merge, then tag a new \`YYYY.MM.DD-maintained.N\` release (and bump addon/config.yaml version to match)."

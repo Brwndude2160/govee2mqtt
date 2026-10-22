@@ -3,7 +3,7 @@ name: PR
 on:
   pull_request:
     branches:
-      - main
+      - maintained
 
 env:
   CARGO_TERM_COLOR: always

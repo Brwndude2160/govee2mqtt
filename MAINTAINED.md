@@ -1,0 +1,36 @@
+# Maintained fork
+
+This is a maintained fork of [wez/govee2mqtt](https://github.com/wez/govee2mqtt)
+(MIT licensed), created because upstream development has stalled
+(last upstream commit 2026-04-08, last release 2026-03-25).
+
+- Branch: `maintained` (default). `main` mirrors upstream as it was when forked.
+- Add-on repository URL for Home Assistant: `https://github.com/Brwndude2160/govee2mqtt`
+- Images: `ghcr.io/brwndude2160/govee2mqtt` (container) and
+  `ghcr.io/brwndude2160/govee2mqtt-{amd64,aarch64}` (Home Assistant add-on)
+- A weekly workflow (`.github/workflows/upstream-sync.yml`) opens a PR when
+  upstream `main` gains new commits.
+
+## Releasing
+
+1. Set `version:` in `addon/config.yaml` to the new `YYYY.MM.DD-maintained.N`.
+2. Commit to `maintained`, then tag that commit with the same name and push the tag.
+   The tag build publishes the add-on images under that version.
+
+## Upstream PRs merged
+
+| PR | Description | Notes |
+|----|-------------|-------|
+| [#720](https://github.com/wez/govee2mqtt/pull/720) | fix(hass): re-assert availability so a missed "online" can't strand entities | clean |
+| [#711](https://github.com/wez/govee2mqtt/pull/711) | hass: only re-register on "online", debounce overlapping status triggers | textual conflict with #720 (both added a top-level item at the same spot in `src/service/hass.rs`); kept both |
+| [#723](https://github.com/wez/govee2mqtt/pull/723) | iot: recover when libmosquitto stops reconnecting after a TLS EOF | clean |
+| [#718](https://github.com/wez/govee2mqtt/pull/718) | fix: show Offline status for devices reported offline | clean |
+| [#726](https://github.com/wez/govee2mqtt/pull/726) | feat(lights): honor Home Assistant transition attribute | clean |
+| [#703](https://github.com/wez/govee2mqtt/pull/703) | Don't discard successful results when the cache write fails | clean |
+
+## Fork-specific changes
+
+- Image names, add-on `url`, `repository.yaml`, and cosign identity point at this fork.
+- Builds run on the `maintained` branch; `:latest` tracks `maintained`.
+- Tag builds build the add-on from the container image for that exact tag
+  rather than `:latest`.

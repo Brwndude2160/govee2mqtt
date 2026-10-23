@@ -2,13 +2,15 @@ use crate::service::coordinator::Coordinator;
 use crate::service::device::{Device, DeviceState};
 use crate::service::state::StateHandle;
 use anyhow::Context;
-use axum::extract::{Path, State};
+use axum::extract::{ConnectInfo, Path, Request, State};
 use axum::http::StatusCode;
+use axum::middleware::{self, Next};
 use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::{Json, Router};
 use serde::Serialize;
-use std::net::IpAddr;
+use std::net::{IpAddr, SocketAddr};
+use std::sync::OnceLock;
 use tower_http::services::ServeDir;
 
 fn response_with_code<T: ToString + std::fmt::Display>(code: StatusCode, err: T) -> Response {
@@ -226,7 +228,61 @@ async fn activate_one_click(
 }
 
 async fn redirect_to_index() -> Response {
-    axum::response::Redirect::to("/assets/index.html").into_response()
+    // Relative, so it also works behind Home Assistant ingress, where the
+    // add-on is served under /api/hassio_ingress/<token>/.
+    axum::response::Redirect::to("assets/index.html").into_response()
+}
+
+/// Clients allowed to use the HTTP API/UI, from GOVEE_HTTP_ALLOWED_CLIENTS
+/// (comma-separated IP addresses). Unset, empty or "*" means no restriction
+/// (upstream behaviour). Loopback is always allowed.
+///
+/// The API has no authentication and can control every device, so the add-on
+/// defaults this to Home Assistant's ingress proxy only; see addon/run.sh.
+fn allowed_http_clients() -> &'static Option<Vec<IpAddr>> {
+    static ALLOWED: OnceLock<Option<Vec<IpAddr>>> = OnceLock::new();
+    ALLOWED.get_or_init(|| {
+        let raw = std::env::var("GOVEE_HTTP_ALLOWED_CLIENTS").ok()?;
+        let raw = raw.trim();
+        if raw.is_empty() || raw == "*" {
+            return None;
+        }
+        let list: Vec<IpAddr> = raw
+            .split(',')
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            .filter_map(|s| match s.parse() {
+                Ok(ip) => Some(ip),
+                Err(_) => {
+                    log::warn!("GOVEE_HTTP_ALLOWED_CLIENTS: ignoring invalid address {s:?}");
+                    None
+                }
+            })
+            .collect();
+        log::info!("HTTP API/UI restricted to {list:?} (plus loopback)");
+        Some(list)
+    })
+}
+
+async fn restrict_http_clients(
+    ConnectInfo(peer): ConnectInfo<SocketAddr>,
+    req: Request,
+    next: Next,
+) -> Response {
+    if let Some(allowed) = allowed_http_clients() {
+        let ip = match peer.ip() {
+            IpAddr::V6(v6) => v6
+                .to_ipv4_mapped()
+                .map(IpAddr::V4)
+                .unwrap_or(IpAddr::V6(v6)),
+            ip => ip,
+        };
+        if !ip.is_loopback() && !allowed.contains(&ip) {
+            log::warn!("HTTP: rejected request from {ip} (not in GOVEE_HTTP_ALLOWED_CLIENTS)");
+            return (StatusCode::FORBIDDEN, "forbidden").into_response();
+        }
+    }
+    next.run(req).await
 }
 
 fn build_router(state: StateHandle) -> Router {
@@ -249,6 +305,7 @@ fn build_router(state: StateHandle) -> Router {
         .route("/api/oneclick/activate/{scene}", get(activate_one_click))
         .route("/", get(redirect_to_index))
         .nest_service("/assets", ServeDir::new("assets"))
+        .layer(middleware::from_fn(restrict_http_clients))
         .with_state(state)
 }
 
@@ -271,7 +328,12 @@ pub async fn run_http_server(state: StateHandle, port: u16) -> anyhow::Result<()
         .with_context(|| format!("run_http_server: binding to port {port}"))?;
     let addr = listener.local_addr()?;
     log::info!("http server addr is {addr:?}");
-    if let Err(err) = axum::serve(listener, app).await {
+    if let Err(err) = axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await
+    {
         log::error!("http server stopped: {err:#}");
     }
 

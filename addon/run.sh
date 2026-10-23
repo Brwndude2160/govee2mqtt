@@ -83,6 +83,15 @@ if bashio::config.has_value scan ; then
   export GOVEE_LAN_SCAN="$(bashio::config scan)"
 fi
 
+# The HTTP API/UI has no authentication. By default only Home Assistant's
+# ingress proxy (the Supervisor, 172.30.32.2) and loopback may use it, so the
+# UI is reached via the HA sidebar (behind HA login). Set http_allowed_clients
+# to a comma-separated IP list, or "*" for the old LAN-wide access.
+if bashio::config.has_value http_allowed_clients ; then
+  export GOVEE_HTTP_ALLOWED_CLIENTS="$(bashio::config http_allowed_clients)"
+else
+  export GOVEE_HTTP_ALLOWED_CLIENTS="127.0.0.1,172.30.32.2"
+fi
 if bashio::config.has_value temperature_scale ; then
   export GOVEE_TEMPERATURE_SCALE="$(bashio::config temperature_scale)"
 fi

@@ -415,6 +415,12 @@ impl Device {
     /// Indicate whether we require the platform API data in order
     /// to correctly report the device
     pub fn needs_platform_poll(&self) -> bool {
+        // Lights reachable on the LAN report their state there; polling the
+        // Platform API for them only burns API quota, and fails outright for
+        // lights that are firewalled from the internet ("Device is offline").
+        if self.lan_device.is_some() && self.device_type() == DeviceType::Light {
+            return false;
+        }
         if !self.iot_api_supported() {
             return true;
         }

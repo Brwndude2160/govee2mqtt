@@ -47,3 +47,4 @@ This is a maintained fork of [wez/govee2mqtt](https://github.com/wez/govee2mqtt)
 | Version | Change |
 |---------|--------|
 | 2026.10.23-maintained.2 | Scenes/effects prefer the LAN API (ptReal + Govee's public light-effect library, no login) and fall back to the Platform API only if LAN fails. Fixes effects on lights that are blocked from the internet (Platform API answers "Device is offline"). |
+| 2026.10.23-maintained.3 | Security: the HTTP API/UI (unauthenticated, controls every device) is now limited to HA's ingress proxy (172.30.32.2) and loopback by default (`http_allowed_clients` option / `GOVEE_HTTP_ALLOWED_CLIENTS`; `*` restores LAN-wide access). The add-on UI moves to the HA sidebar via ingress; UI asset/API paths made relative. Performance: lights reachable on the LAN are no longer polled via the Platform API (saved API quota; those polls failed for internet-blocked lights). |

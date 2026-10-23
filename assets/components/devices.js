@@ -20,7 +20,7 @@ export class DeviceList extends LitElement {
 
   _deviceListTask = new Task(this, {
     task: async ([], {signal}) => {
-      const response = await fetch('/api/devices', {signal});
+      const response = await fetch('../api/devices', {signal});
       if (!response.ok) {
         throw new Error(response.status);
       }
@@ -77,14 +77,14 @@ export class DeviceList extends LitElement {
   _set_power_on(e) {
     const device_id = e.target.dataset.id;
     const power = e.target.checked ? 'on' : 'off';
-    fetch(`/api/device/${device_id}/power/${power}`);
+    fetch(`../api/device/${device_id}/power/${power}`);
   }
 
   _set_color(e) {
     const device_id = e.target.dataset.id;
     const color = encodeURIComponent(e.target.value);
     console.log(`color will change to ${color}`);
-    fetch(`/api/device/${device_id}/color/${color}`);
+    fetch(`../api/device/${device_id}/color/${color}`);
   }
 
   _render_item = (item) => {

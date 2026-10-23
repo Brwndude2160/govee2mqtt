@@ -18,8 +18,6 @@ ingress: true
 ingress_port: 8056
 panel_icon: mdi:lightbulb-group
 panel_title: Govee
-#ingress: true
-#ingress_port: 8056
 
 # Host network access is required for LAN discovery
 host_network: true
@@ -31,6 +29,7 @@ map:
 
 options:
   temperature_scale: "C"
+  http_allowed_clients: ""
 
 schema:
   temperature_scale: "str?"

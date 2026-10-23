@@ -89,12 +89,13 @@ configuration:
       global broadcast address 255.255.255.255. To be honest, if
       multicast-UDP doesn't work, this isn't likely to work any
       better.
-
-
-
-
-
-
-
-
-
+  http_allowed_clients:
+    name: Allowed IP addresses for the web UI and API
+    description: >-
+      The govee2mqtt web UI and HTTP API have no password and can control
+      every device, so by default only the Home Assistant sidebar panel
+      can use them. Enter a comma-separated list of extra IP addresses
+      (for example 192.168.1.50, 192.168.1.51) that may open
+      http://<home-assistant-ip>:8056 directly, or "*" to allow every device
+      on your network (not recommended). Restart the add-on after changing
+      this. The sidebar panel always keeps working.

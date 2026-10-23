@@ -34,3 +34,8 @@ This is a maintained fork of [wez/govee2mqtt](https://github.com/wez/govee2mqtt)
 - Builds run on the `maintained` branch; `:latest` tracks `maintained`.
 - Tag builds build the add-on from the container image for that exact tag
   rather than `:latest`.
+- The legacy `home-assistant/builder` action (2026.02.1; removed upstream in
+  2026.06.0) can no longer verify Home Assistant's current base-image
+  signatures ("no signatures found"), so add-on builds run without `--cosign`.
+  Supervisor doesn't require signed images for third-party add-on repos.
+  Longer term: migrate to the composable actions in home-assistant/builder.

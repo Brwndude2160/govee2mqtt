@@ -648,10 +648,34 @@ impl State {
         device: &Device,
         scene: &str,
     ) -> anyhow::Result<()> {
-        // TODO: some plumbing to maintain offline scene controls for preferred-LAN control
-        let avoid_platform_api = device.avoid_platform_api();
+        // Prefer the LAN API when the device is reachable locally. Scene data comes
+        // from Govee's public light-effect library (no account login, cached by
+        // undoc_api), and the scene is sent straight to the light with ptReal, so
+        // effects keep working when the light itself has no internet / cloud
+        // connection (e.g. IoT devices firewalled from the internet, where the
+        // Platform API answers "Device is offline"). Fall back to the Platform
+        // API only if the LAN attempt fails (e.g. a scene without a LAN code).
+        let mut lan_error = None;
+        if let Some(lan_dev) = &device.lan_device {
+            log::info!("Using LAN API to set {device} to scene {scene}");
+            match lan_dev.set_scene_by_name(scene).await {
+                Ok(()) => {
+                    self.device_mut(&device.sku, &device.id)
+                        .await
+                        .set_active_scene(Some(scene));
+                    return Ok(());
+                }
+                Err(err) => {
+                    log::warn!(
+                        "LAN API failed to set {device} to scene {scene}: {err:#}; \
+                         trying Platform API"
+                    );
+                    lan_error = Some(err);
+                }
+            }
+        }
 
-        if !avoid_platform_api {
+        if !device.avoid_platform_api() {
             if let Some(client) = self.get_platform_client().await {
                 if let Some(info) = &device.http_device_info {
                     log::info!("Using Platform API to set {device} to scene {scene}");
@@ -664,14 +688,8 @@ impl State {
             }
         }
 
-        if let Some(lan_dev) = &device.lan_device {
-            log::info!("Using LAN API to set {device} to scene {scene}");
-            lan_dev.set_scene_by_name(scene).await?;
-
-            self.device_mut(&device.sku, &device.id)
-                .await
-                .set_active_scene(Some(scene));
-            return Ok(());
+        if let Some(err) = lan_error {
+            return Err(err.context(format!("Unable to set scene {scene} for {device}")));
         }
 
         anyhow::bail!("Unable to set scene for {device}");

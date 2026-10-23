@@ -41,3 +41,9 @@ This is a maintained fork of [wez/govee2mqtt](https://github.com/wez/govee2mqtt)
   on every build, and published add-on images are signed. `addon/build.yaml`
   is gone; its labels and base image now live in `addon/Dockerfile`.
 - A tag build fails if the tag doesn't match `addon/config.yaml`'s version.
+
+## Fork-specific changes
+
+| Version | Change |
+|---------|--------|
+| 2026.10.23-maintained.2 | Scenes/effects prefer the LAN API (ptReal + Govee's public light-effect library, no login) and fall back to the Platform API only if LAN fails. Fixes effects on lights that are blocked from the internet (Platform API answers "Device is offline"). |

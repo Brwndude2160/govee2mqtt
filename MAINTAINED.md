@@ -13,7 +13,12 @@ This is a maintained fork of [wez/govee2mqtt](https://github.com/wez/govee2mqtt)
 
 ## Releasing
 
-1. Set `version:` in `addon/config.yaml` to the new `YYYY.MM.DD-maintained.N`.
+1. Set `version:` in `addon/config.yaml` to the new `MAJOR.MINOR.PATCH`
+   (semantic versioning: PATCH = bug fixes, MINOR = new features, MAJOR =
+   breaking changes). Tag without a leading `v` (e.g. `1.1.1`), because CI
+   checks that the tag equals the version. Releases up to
+   `2026.10.23-maintained.3` were date-based; HA sees those as newer than
+   1.x, so moving to 1.1.0 needs a one-time add-on reinstall.
 2. Commit to `maintained`, then tag that commit with the same name and push the tag.
    The tag build publishes the add-on images under that version.
 
@@ -48,3 +53,4 @@ This is a maintained fork of [wez/govee2mqtt](https://github.com/wez/govee2mqtt)
 |---------|--------|
 | 2026.10.23-maintained.2 | Scenes/effects prefer the LAN API (ptReal + Govee's public light-effect library, no login) and fall back to the Platform API only if LAN fails. Fixes effects on lights that are blocked from the internet (Platform API answers "Device is offline"). |
 | 2026.10.23-maintained.3 | Security: the HTTP API/UI (unauthenticated, controls every device) is now limited to HA's ingress proxy (172.30.32.2) and loopback by default (`GOVEE_HTTP_ALLOWED_CLIENTS`; `*` restores LAN-wide access). In the add-on, "Allowed IP addresses for the web UI and API" on the Configuration tab adds extra IPs; the ingress proxy is always kept. The add-on UI moves to the HA sidebar via ingress; UI asset/API paths made relative. Performance: lights reachable on the LAN are no longer polled via the Platform API (saved API quota; those polls failed for internet-blocked lights). |
+| 1.1.0 | Switch to semantic versioning. Same code as 2026.10.23-maintained.3. Upgrading from a date-based version needs a one-time add-on reinstall (HA sees 2026.x as newer than 1.x). |

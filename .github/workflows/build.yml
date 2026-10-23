@@ -6,7 +6,7 @@ on:
       - maintained
   push:
     tags:
-      - "20*"
+      - "[0-9]*"
     branches:
       - maintained
     paths:

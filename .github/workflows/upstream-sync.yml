@@ -41,4 +41,4 @@ jobs:
           fi
           gh pr create -R "$GITHUB_REPOSITORY" --base maintained --head wez:main \
             --title "Upstream sync: wez/govee2mqtt main @ ${{ steps.check.outputs.sha }}" \
-            --body "wez/govee2mqtt main has ${{ steps.check.outputs.count }} commit(s) not in \`maintained\`. Review, resolve any conflicts, merge, then tag a new \`YYYY.MM.DD-maintained.N\` release (and bump addon/config.yaml version to match)."
+            --body "wez/govee2mqtt main has ${{ steps.check.outputs.count }} commit(s) not in \`maintained\`. Review, resolve any conflicts, merge, then tag a new \`MAJOR.MINOR.PATCH\` release (and bump addon/config.yaml version to match)."

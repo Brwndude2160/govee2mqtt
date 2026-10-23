@@ -33,9 +33,11 @@ This is a maintained fork of [wez/govee2mqtt](https://github.com/wez/govee2mqtt)
 - Image names, add-on `url`, `repository.yaml`, and cosign identity point at this fork.
 - Builds run on the `maintained` branch; `:latest` tracks `maintained`.
 - Tag builds build the add-on from the container image for that exact tag
-  rather than `:latest`.
-- The legacy `home-assistant/builder` action (2026.02.1; removed upstream in
-  2026.06.0) can no longer verify Home Assistant's current base-image
-  signatures ("no signatures found"), so add-on builds run without `--cosign`.
-  Supervisor doesn't require signed images for third-party add-on repos.
-  Longer term: migrate to the composable actions in home-assistant/builder.
+  rather than `:latest` (the `GOVEE_IMAGE` build arg).
+- Add-on images are built with the composable `home-assistant/builder`
+  actions (the legacy `home-assistant/builder` action was deprecated and
+  could no longer verify Home Assistant's base-image signatures). The base
+  image (`ghcr.io/home-assistant/base-debian:bookworm`) is cosign-verified
+  on every build, and published add-on images are signed. `addon/build.yaml`
+  is gone; its labels and base image now live in `addon/Dockerfile`.
+- A tag build fails if the tag doesn't match `addon/config.yaml`'s version.
